@@ -625,6 +625,9 @@ init_thread (struct thread *t, const char *name, int priority) {
 	//mlfqs - init_thread()
 	t->nice = 0;                                // 기본값 (thread_create에서 부모 값으로 덮어씀)
 	t->recent_cpu = 0;                          // 기본값 (thread_create에서 부모 값으로 덮어씀)
+	
+	t->exit_status = -1; 	//기본 상태 -1로 초기화(무엇도 제대로 실행안되고 종료될때)
+	list_init(&t->fd_list); //fd 리스트 초기화
 
 	enum intr_level old_level = intr_disable (); // 타이머 인터럽트가 all_list를 순회하므로 보호
 	list_push_back (&all_list, &t->all_elem);   // 모든 스레드 목록에 등록

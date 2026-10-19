@@ -1,0 +1,42 @@
+{
+    "configurations": [
+        {
+            "name": "Pintos User",
+            "compilerPath": "/usr/bin/gcc",
+            "compilerArgs": ["-nostdinc"],
+            "intelliSenseMode": "linux-gcc-x64",
+            "cStandard": "gnu17",
+            "includePath": [
+                "${workspaceFolder}/pintos",
+                "${workspaceFolder}/pintos/include/lib",
+                "${workspaceFolder}/pintos/include",
+                "${workspaceFolder}/pintos/include/lib/kernel",
+                "${workspaceFolder}/pintos/include/lib/user"
+            ],
+            "defines": [],
+            "browse": {
+                "path": ["${workspaceFolder}/pintos"],
+                "limitSymbolsToIncludedHeaders": false
+            }
+        },
+        {
+            "name": "Pintos Kernel",
+            "compilerPath": "/usr/bin/gcc",
+            "compilerArgs": ["-nostdinc"],
+            "intelliSenseMode": "linux-gcc-x64",
+            "cStandard": "gnu17",
+            "includePath": [
+                "${workspaceFolder}/pintos",
+                "${workspaceFolder}/pintos/include/lib",
+                "${workspaceFolder}/pintos/include",
+                "${workspaceFolder}/pintos/include/lib/kernel"
+            ],
+            "defines": ["USERPROG", "FILESYS"],
+            "browse": {
+                "path": ["${workspaceFolder}/pintos"],
+                "limitSymbolsToIncludedHeaders": false
+            }
+        }
+    ],
+    "version": 4
+}

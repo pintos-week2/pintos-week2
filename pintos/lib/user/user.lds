@@ -4,7 +4,7 @@ ENTRY(_start)
 
 SECTIONS
 {
-  /* Read-only sections, merged into text segment: */
+  /* 텍스트 세그먼트에 합쳐지는 읽기 전용 섹션: */
   __executable_start = 0x0400000 + SIZEOF_HEADERS;
   . = 0x0400000;
   .text : {
@@ -14,8 +14,8 @@ SECTIONS
 
   .rodata : { *(.rodata) }
 
-  /* Adjust the address for the data segment.  We want to adjust up to
-     the same address within the page on the next page up.  */
+  /* 데이터 세그먼트의 주소를 조정한다. 다음 페이지에서
+     현재 페이지 내부 오프셋과 같은 위치가 되도록 주소를 올린다. */
   . = DATA_SEGMENT_ALIGN (CONSTANT (MAXPAGESIZE), CONSTANT (COMMONPAGESIZE));
 
   .data : { *(.data) }
@@ -23,7 +23,7 @@ SECTIONS
 
   . = DATA_SEGMENT_RELRO_END (0, .);
 
-  /* Stabs debugging sections.  */
+  /* Stabs 디버깅 섹션. */
   .stab          0 : { *(.stab) }
   .stabstr       0 : { *(.stabstr) }
   .stab.excl     0 : { *(.stab.excl) }
@@ -32,16 +32,16 @@ SECTIONS
   .stab.indexstr 0 : { *(.stab.indexstr) }
   .comment       0 : { *(.comment) }
 
-  /* DWARF debug sections.
-  Symbols in the DWARF debugging sections are relative to the beginning
-  of the section so we begin them at 0.  */
+  /* DWARF 디버깅 섹션.
+  DWARF 디버깅 섹션의 심볼은 섹션 시작을 기준으로 한 상대 위치를
+  사용하므로, 각 섹션을 0에서 시작한다. */
   /* DWARF 1 */
   .debug          0 : { *(.debug) }
   .line           0 : { *(.line) }
-  /* GNU DWARF 1 extensions */
+  /* GNU DWARF 1 확장 */
   .debug_srcinfo  0 : { *(.debug_srcinfo) }
   .debug_sfnames  0 : { *(.debug_sfnames) }
-  /* DWARF 1.1 and DWARF 2 */
+  /* DWARF 1.1 및 DWARF 2 */
   .debug_aranges  0 : { *(.debug_aranges) }
   .debug_pubnames 0 : { *(.debug_pubnames) }
   /* DWARF 2 */
@@ -52,7 +52,7 @@ SECTIONS
   .debug_str      0 : { *(.debug_str) }
   .debug_loc      0 : { *(.debug_loc) }
   .debug_macinfo  0 : { *(.debug_macinfo) }
-  /* SGI/MIPS DWARF 2 extensions */
+  /* SGI/MIPS DWARF 2 확장 */
   .debug_weaknames 0 : { *(.debug_weaknames) }
   .debug_funcnames 0 : { *(.debug_funcnames) }
   .debug_typenames 0 : { *(.debug_typenames) }
