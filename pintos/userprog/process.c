@@ -18,6 +18,7 @@
 #include "threads/mmu.h"
 #include "threads/vaddr.h"
 #include "intrinsic.h"
+#include "threads/vaddr.h"
 #ifdef VM
 #include "vm/vm.h"
 #endif
@@ -78,8 +79,32 @@ initd (void *f_name) {
 tid_t
 process_fork (const char *name, struct intr_frame *if_ UNUSED) {
 	/* 현재 스레드를 새 스레드로 복제한다. */
-	return thread_create (name,
-			PRI_DEFAULT, __do_fork, thread_current ());
+	struct fork_status *status;
+	status = malloc(sizeof(*status));
+	bool success;
+	tid_t tid;
+
+	if (status == NULL)
+		return TID_ERROR;
+	
+	status->parent = thread_current();
+	status->parent_if = *if_;
+	sema_init(&status->sema, 0);
+	status->success = false;
+
+	tid = thread_create (name, PRI_DEFAULT, __do_fork, status);
+	
+	if (tid == TID_ERROR) {
+		free(status);
+		return TID_ERROR;
+	}
+	
+	sema_down(&status->sema);
+	
+	success = status->success;
+	free(status);
+
+	return success ? tid : TID_ERROR;
 }
 
 #ifndef VM
@@ -94,21 +119,33 @@ duplicate_pte (uint64_t *pte, void *va, void *aux) {
 	bool writable;
 
 	/* 1. TODO: parent_page가 커널 페이지라면 즉시 반환한다. */
-
+	if (is_kern_pte(pte))
+		return true;
 	/* 2. 부모의 4단계 페이지 테이블에서 VA에 대응하는 페이지를 찾는다. */
 	parent_page = pml4_get_page (parent->pml4, va);
 
+	if (parent_page == NULL)
+		return false;
+
 	/* 3. TODO: 자식용 PAL_USER 페이지를 새로 할당하고,
 	 *    TODO: 그 결과를 NEWPAGE에 저장한다. */
+	newpage = palloc_get_page(PAL_USER);	// 물리 메모리의 페이지 하나를 할당받는 함수. 사용자 풀에서 페이지 할당.
+
+	if (newpage == NULL)
+		return false;
 
 	/* 4. TODO: 부모의 페이지를 새 페이지에 복사하고,
 	 *    TODO: 부모 페이지의 쓰기 가능 여부를 확인한다.
 	 *    TODO: 확인 결과에 따라 WRITABLE을 설정한다. */
+	memcpy(newpage, parent_page, PGSIZE);
+	writable = (*pte & PTE_W) != 0;
 
 	/* 5. 자식 페이지 테이블의 주소 VA에 새 페이지를 추가하고,
 	 *    WRITABLE에 따라 쓰기 권한을 설정한다. */
 	if (!pml4_set_page (current->pml4, va, newpage, writable)) {
 		/* 6. TODO: 페이지 추가에 실패하면 오류를 처리한다. */
+		palloc_free_page(newpage);
+		return false;
 	}
 	return true;
 }
@@ -119,15 +156,14 @@ duplicate_pte (uint64_t *pte, void *va, void *aux) {
  * 따라서 process_fork의 두 번째 인자를 이 함수에 전달해야 한다. */
 static void
 __do_fork (void *aux) {
+	struct fork_status *status = aux;
 	struct intr_frame if_;
-	struct thread *parent = (struct thread *) aux;
+	struct thread *parent = (struct thread *) status->parent;
 	struct thread *current = thread_current ();
-	/* TODO: parent_if, 즉 process_fork()의 if_를 전달할 방법을 구현한다. */
-	struct intr_frame *parent_if;
-	bool succ = true;
+	struct semaphore *sema = &status->sema;
 
 	/* 1. CPU 실행 문맥을 지역 스택에 복사한다. */
-	memcpy (&if_, parent_if, sizeof (struct intr_frame));
+	if_ = status->parent_if;
 
 	/* 2. 페이지 테이블(PT)을 복제한다. */
 	current->pml4 = pml4_create();
@@ -144,16 +180,20 @@ __do_fork (void *aux) {
 		goto error;
 #endif
 	
-
 	/* TODO: 여기에 구현한다. file_duplicate()를 사용해 파일 객체를 복제한다. 부모는 자식이 자원을 성공적으로 복제할 때까지 fork()에서 반환하면 안 된다. */
 	if (in_external_intr == false) {
 		process_init ();
-		
 	}
+
 	/* 마지막으로 새 프로세스로 전환한다. */
-	if (succ)
-		do_iret (&if_);
+	status->success = true;
+	if_.R.rax = 0;
+	sema_up(&status->sema);
+	do_iret(&if_);
+	
 error:
+	status->success = false;
+	sema_up(&status->sema);
 	thread_exit ();
 }
 

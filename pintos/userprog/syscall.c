@@ -9,6 +9,7 @@
 #include "intrinsic.h"
 #include "threads/init.h"
 #include "filesys/filesys.h"
+#include "process.c"
 
 void syscall_entry (void);
 void syscall_handler (struct intr_frame *);
@@ -62,7 +63,8 @@ syscall_handler (struct intr_frame *f) {
 	}
 
 	case SYS_FORK:
-	{
+	{	
+		f->R.rax = process_fork((const char *)f->R.rdi, f);
 
 		break;
 	}
