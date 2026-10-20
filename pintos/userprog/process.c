@@ -81,6 +81,7 @@ process_fork (const char *name, struct intr_frame *if_ UNUSED) {
 	/* 현재 스레드를 새 스레드로 복제한다. */
 	struct fork_status *status;
 	status = malloc(sizeof(*status));
+	bool success;
 	tid_t tid;
 
 	if (status == NULL)
@@ -98,12 +99,12 @@ process_fork (const char *name, struct intr_frame *if_ UNUSED) {
 		return TID_ERROR;
 	}
 	
-	success = status->success;
-
 	sema_down(&status->sema);
+	
+	success = status->success;
 	free(status);
 
-	return succuess ? tid : TID_ERROR;
+	return success ? tid : TID_ERROR;
 }
 
 #ifndef VM
