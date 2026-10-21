@@ -18,7 +18,6 @@
 #include "threads/mmu.h"
 #include "threads/vaddr.h"
 #include "intrinsic.h"
-#include "threads/vaddr.h"
 #ifdef VM
 #include "vm/vm.h"
 #endif
@@ -115,6 +114,7 @@ duplicate_pte (uint64_t *pte, void *va, void *aux) {
 	struct thread *parent = (struct thread *) aux;
 	void *parent_page;
 	void *newpage;
+	struct thread *pml4 = pml4_create ();
 	bool writable;
 
 	/* 1. TODO: parent_page가 커널 페이지라면 즉시 반환한다. */
@@ -516,7 +516,7 @@ load (const char *file_name, struct intr_frame *if_) {
 	if_->R.rsi = (uint64_t) user_argv;
 
 	/* 완성된 스택 위치를 저장한다. */
-	if_->rsp = sp;
+	if_->rsp = (uintptr_t) sp;
 		
 
 
