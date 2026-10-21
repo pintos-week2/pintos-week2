@@ -3,5 +3,4 @@
 
 void syscall_init (void);
 extern struct lock file_lock;
-
 #endif /* userprog/syscall.h */

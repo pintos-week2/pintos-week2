@@ -18,6 +18,8 @@
 #include "threads/mmu.h"
 #include "threads/vaddr.h"
 #include "intrinsic.h"
+#include "threads/vaddr.h"
+#include "userprog/syscall.h"
 #ifdef VM
 #include "vm/vm.h"
 #endif
@@ -53,7 +55,27 @@ process_create_initd (const char *file_name) {
 
 	/* Create a new thread to execute FILE_NAME. */
 	/* 실행할 프로세스 생성 */
-	tid = thread_create (file_name, PRI_DEFAULT, initd, fn_copy);
+	//tid = thread_create (file_name, PRI_DEFAULT, initd, fn_copy);
+	/* 명령줄 앞의 공백 건너뛰기 */
+	const char *start = file_name;
+	while (*start == ' ')
+		start++;
+
+	/* 이름 추출용 복사본 */
+	char name[16];
+	strlcpy(name, start, sizeof name);
+
+	char *save_p;
+	char *program_name = strtok_r(name, " ", &save_p);
+
+	/* 빈 명령줄 처리 */
+	if (program_name == NULL) {
+		palloc_free_page(fn_copy);
+		return TID_ERROR;
+	}
+
+	tid = thread_create(program_name, PRI_DEFAULT, initd, fn_copy);
+
 	if (tid == TID_ERROR)
 		palloc_free_page (fn_copy);
 	return tid;
@@ -80,7 +102,6 @@ process_fork (const char *name, struct intr_frame *if_ UNUSED) {
 	/* 현재 스레드를 새 스레드로 복제한다. */
 	struct fork_status *status;
 	status = malloc(sizeof(*status));
-	bool success;
 	tid_t tid;
 
 	if (status == NULL)
@@ -98,7 +119,7 @@ process_fork (const char *name, struct intr_frame *if_ UNUSED) {
 		return TID_ERROR;
 	}
 	
-	success = status->success;
+	bool success = status->success;
 
 	sema_down(&status->sema);
 	free(status);
@@ -115,7 +136,6 @@ duplicate_pte (uint64_t *pte, void *va, void *aux) {
 	struct thread *parent = (struct thread *) aux;
 	void *parent_page;
 	void *newpage;
-	struct thread *pml4 = pml4_create ();
 	bool writable;
 
 	/* 1. TODO: parent_page가 커널 페이지라면 즉시 반환한다. */
@@ -255,6 +275,17 @@ process_exit (void) {
 	 //종료 메세지 출력
 	 if (curr->pml4 != NULL)
 		printf ("%s: exit(%d)\n", thread_name(), curr->exit_status);
+
+	lock_acquire(&file_lock);
+		for (int i = 2; i < 128; i++)
+		{
+			if(curr->fd_list[i] != NULL)
+			{
+				file_close(curr->fd_list[i]);
+				curr->fd_list[i] = NULL;
+			}
+		}
+	lock_release(&file_lock);
 
 	process_cleanup ();
 }
@@ -517,7 +548,7 @@ load (const char *file_name, struct intr_frame *if_) {
 	if_->R.rsi = (uint64_t) user_argv;
 
 	/* 완성된 스택 위치를 저장한다. */
-	if_->rsp = (uintptr_t) sp;
+	if_->rsp = sp;
 		
 
 
