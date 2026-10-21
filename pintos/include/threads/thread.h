@@ -1,5 +1,6 @@
 #ifndef THREADS_THREAD_H
 #define THREADS_THREAD_H
+#define THREADS_THREAD_H
 #define USERPROG
 
 #include <debug.h>
@@ -101,6 +102,11 @@ struct thread {
 	int64_t wakeup_tick;					 // 스레드가 깨어나야 하는 시각을 타이머 틱 단위로 저장
 //------------------------------------------------------------------------------------------------------------------------------------------------------
 
+//project2---------------------------------------------
+	//종료 상태 저장(아무것도 안되고 종료되었을때 -1)
+	int exit_status;
+	struct file *fd_list[128];	//fd 리스트
+//project2---------------------------------------------
 //mlfqs
 	int nice;                               // 양보 정도 (-20 ~ 20), 정수
 	int recent_cpu;                         // 최근 CPU 사용량, 고정소수점
@@ -171,5 +177,3 @@ void do_iret (struct intr_frame *tf);
 void thread_check_preemption (void);
 
 void thread_update_priority (struct thread *t);
-
-#endif /* threads/thread.h */
