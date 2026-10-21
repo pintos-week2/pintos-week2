@@ -14,13 +14,13 @@
 #include "devices/input.h"
 #include "include/lib/kernel/stdio.h"
 #include "threads/synch.h"
-#include "process.c"
 
 void syscall_entry (void);
 void syscall_handler (struct intr_frame *);
 bool validate_user_string(const char *ptr);
 bool validate_user_buffer (void *buffer, size_t size);
 bool validate_user_addr(void *ptr);
+static void sys_exit(int status);
 struct lock file_lock;
 
 /* 시스템 콜.
@@ -73,7 +73,7 @@ static int sys_read(int fd, void *buffer, unsigned size)
 	if (validate_user_buffer(buffer, size) == false)
 	{
 		thread_current()->exit_status = -1;
-		thread_exit();
+		sys_exit(-1);
 	}
 	if (size == 0) return 0;
 
@@ -101,7 +101,7 @@ static int sys_write(int fd, void *buffer, unsigned size)
 	if (validate_user_buffer(buffer, size) == false)
 	{
 		thread_current()->exit_status = -1;
-		thread_exit();
+		sys_exit(-1);
 	}
 	if (size == 0) return 0;
 
@@ -121,6 +121,13 @@ static int sys_write(int fd, void *buffer, unsigned size)
 	return bytes_write;
 }
 
+static void sys_exit(int status)
+{
+	struct thread *t = thread_current();
+	t->exit_status = status;
+	
+	thread_exit();
+}
 
 /* 시스템 콜의 주 진입 인터페이스 */
 /* The main system call interface */
@@ -140,10 +147,8 @@ syscall_handler (struct intr_frame *f) {
 	}
 	case SYS_EXIT: //check
 	{
-		struct thread *t = thread_current();
-		t->exit_status = f->R.rdi;
-		
-		thread_exit();
+		sys_exit(f->R.rdi);
+		break;
 	}
 
 	case SYS_FORK:
@@ -166,19 +171,19 @@ syscall_handler (struct intr_frame *f) {
 		};
 		page = pml4_get_page(t->pml4,&save_ptr);
 		if (page == NULL)
-			return false;
+			sys_exit(-1);
 		memcpy(page, argv, sizeof(argv));
 	
 		//todo 문자열 전체를 검사
 		if (f->R.rdi == NULL)  {  //주소가 null인지 검사
-			exit(-1);
+			sys_exit(-1);
 		}
 		if (f->R.rdi != NULL || is_user_vaddr((void *) f->R.rdi))  {   //true일시 복사후 전달.
 			char t = f->R.rdi;
 			process_exec(argv);
-			exit(-1);
+			sys_exit(-1);
 		} else {
-		exit(-1);
+		sys_exit(-1);
 		}
 	break;
 	}
