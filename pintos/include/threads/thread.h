@@ -1,6 +1,7 @@
 #ifndef THREADS_THREAD_H
 #define THREADS_THREAD_H
 #define THREADS_THREAD_H
+#define USERPROG
 
 #include <debug.h>
 #include <list.h>
@@ -176,5 +177,3 @@ void do_iret (struct intr_frame *tf);
 void thread_check_preemption (void);
 
 void thread_update_priority (struct thread *t);
-
-#endif /* threads/thread.h */
