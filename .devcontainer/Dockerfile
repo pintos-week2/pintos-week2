@@ -28,7 +28,8 @@ RUN echo "jungle ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/jungle
 USER jungle
 WORKDIR /home/jungle
 
-RUN echo "source /workspaces/pintos_22.04_lab_docker/pintos/activate" >> /home/jungle/.bashrc
+# 저장소 폴더 이름과 상관없이 pintos/activate를 찾아 PATH에 utils를 추가
+RUN echo 'for f in /workspaces/*/pintos/activate; do [ -f "$f" ] && source "$f"; done' >> /home/jungle/.bashrc
 
 # Clone the repository
 # RUN git clone https://github.com/casys-kaist/pintos-kaist /home/jungle/pintos
